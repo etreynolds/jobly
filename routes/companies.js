@@ -51,7 +51,18 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  */
 
 router.get("/", async function (req, res, next) {
+  const filter = req.query;
+
+  if (qs.minEmployees !== undefined) q.minEmployees = +q.minEmployees
+  if (qs.maxEmployees !== undefined) q.maxEmployees = +q.maxEmployees
+
   try {
+    const validator = jsonschema.validate(q, companySearchSchema);
+    if (!validator.valid) {
+      const errs = validator.errors.map(e => e.stack);
+      throw new BadRequestError(errs);
+    }
+
     const companies = await Company.findAll();
     return res.json({ companies });
   } catch (err) {
