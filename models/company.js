@@ -49,7 +49,7 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
+  static async findAll(where = '') {
     const companiesRes = await db.query(
       `SELECT handle,
                   name,
@@ -57,6 +57,7 @@ class Company {
                   num_employees AS "numEmployees",
                   logo_url AS "logoUrl"
            FROM companies
+           ${where}
            ORDER BY name`);
     return companiesRes.rows;
   }
@@ -66,10 +67,11 @@ class Company {
   static async findFiltered(queryObj) {
     const whereClauses = [];
     for (const key in queryObj) {
-      // Write sql where clauses for each filter parameter
+      // Write SQL where clauses for each filter parameter
       switch (key) {
         case 'name':
           const name = queryObj.name;
+          // Where clause that looks for case-insensitive version of string
           whereClauses.push(`UPPER(name) LIKE UPPER('%${name}%')`);
           break;
         case 'minEmployees':
@@ -79,7 +81,7 @@ class Company {
           whereClauses.push(`num_employees <= ${queryObj.maxEmployees}`);
           break;
         default:
-          throw new BadRequestError(`${key} is not a correct filter parameter. Filter parameters allowed: name, minEmployees, maxEmployees`);
+          throw new BadRequestError(`${key} is not an correct filter parameter. Filter parameters allowed: name, minEmployees, and maxEmployees`);
       }
     }
     const whereString = combineWhereClauses(whereClauses);

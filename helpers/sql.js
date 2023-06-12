@@ -19,18 +19,6 @@ const { BadRequestError } = require("../expressError");
  * values is an array with the values used for the query to replace $1, $2... in the query.
  */
 
-/**
- * Function makes the SET clause of an SQL UPDATE statement.
- * 
- * @param dataToUpdate {Object} {field1: newVal, field2: newVal, etc.}
- * @param jsToSql {Object} maps js-style data fields to database column names, like {firstName: "first_name", age: "age"}
- * @returns {Object} {sqlSetCols, dataToUpdate}
- * 
- * @example {firstName: 'Aliya', age: 32} =>
- *    { setCols: '"first_name"=$1, "age"=$2',
- *      values: ['Aliya', 32] }
- */
-
 function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   const keys = Object.keys(dataToUpdate);
   if (keys.length === 0) throw new BadRequestError("No data");
@@ -59,7 +47,7 @@ function combineWhereClauses(clauseArray) {
     return '';
   }
   let whereString = `WHERE ${clauseArray[0]}`;
-  for (let i = 1; i < clauseArray; i++) {
+  for (let i = 1; i < clauseArray.length; i++) {
     whereString += ` AND ${clauseArray[i]}`;
   }
   return whereString;
