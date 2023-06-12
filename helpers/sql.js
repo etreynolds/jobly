@@ -1,6 +1,23 @@
 const { BadRequestError } = require("../expressError");
 
-// THIS NEEDS SOME GREAT DOCUMENTATION.
+/** sqlForPartialUpdate helps partially update a database row from any table.
+ *
+ * Parameters:
+ * 
+ * dataToUpdate must be an object with keys and values corresponding to rows to update.
+ *
+ * jsToSql must be an object that serves as an index that translates the JS key name
+ * to the SQL column name if different
+ * Example: { numEmployees: "num_employees", logoUrl: "logo_url" }
+ * If the JS key name and SQL column name are identical no entry is necessary
+ * 
+ * 
+ * Returns { setCols, values }
+ * 
+ * setCols is a string to be placed after SET in the caller's SQL query
+ * 
+ * values is an array with the values used for the query to replace $1, $2... in the query.
+ */
 
 /**
  * Function makes the SET clause of an SQL UPDATE statement.
@@ -29,4 +46,23 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   };
 }
 
-module.exports = { sqlForPartialUpdate };
+/** Combine where clauses used for filtering
+ * 
+ * Parameter: An array of where clauses without 'WHERE' or 'AND' keywords
+ * 
+ * Returns: A string of combined where clauses with "WHERE" and 'AND' keywords
+ * 
+ */
+
+function combineWhereClauses(clauseArray) {
+  if (!clauseArray[0]) {
+    return '';
+  }
+  let whereString = `WHERE ${clauseArray[0]}`;
+  for (let i = 1; i < clauseArray; i++) {
+    whereString += ` AND ${clauseArray[i]}`;
+  }
+  return whereString;
+}
+
+module.exports = { sqlForPartialUpdate, combineWhereClauses };
