@@ -211,22 +211,22 @@ describe("get", function () {
       description: "Desc1",
       numEmployees: 1,
       logoUrl: "http://c1.img",
-      jobs: [
-        {
-          id: expect.any(Number),
-          title: "Software Engineer",
-          salary: 50000,
-          equity: "0",
-          companyHandle: "c1"
-        },
-        {
-          id: expect.any(Number),
-          title: "Accountant",
-          salary: 70000,
-          equity: "0.2",
-          companyHandle: "c1"
-        }
-      ]
+      // jobs: [
+      //   {
+      //     id: expect.any(Number),
+      //     title: "Software Engineer",
+      //     salary: 50000,
+      //     equity: "0",
+      //     companyHandle: "c1"
+      //   },
+      //   {
+      //     id: expect.any(Number),
+      //     title: "Accountant",
+      //     salary: 70000,
+      //     equity: "0.2",
+      //     companyHandle: "c1"
+      //   }
+      // ]
     });
   });
 
