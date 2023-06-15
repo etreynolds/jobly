@@ -139,7 +139,16 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
-    return user;
+    const applicationsRes = await db.query(
+      `SELECT job_id FROM applications
+           WHERE username = $1
+           ORDER BY job_id DESC`,
+      [username]
+    );
+    const jobsApplied = applicationsRes.rows.map(row => row.job_id);
+    const userObj = { ...user, jobsApplied };
+
+    return userObj;
   }
 
   /** Update user data with `data`.
