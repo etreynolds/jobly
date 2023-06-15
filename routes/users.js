@@ -5,7 +5,7 @@
 const jsonschema = require("jsonschema");
 
 const express = require("express");
-const { ensureLoggedIn, ensureAdmin, ensureSelfOrAdmin } = require("../middleware/auth");
+const { ensureAdmin, ensureSelfOrAdmin } = require("../middleware/auth");
 const { BadRequestError } = require("../expressError");
 const User = require("../models/user");
 const { createToken } = require("../helpers/tokens");
@@ -44,7 +44,7 @@ router.post("/", ensureAdmin, async function (req, res, next) {
 });
 
 
-/** GET / => { users: [ {username, firstName, lastName, email }, ... ] }
+/** GET / => { users: [ {username, firstName, lastName, email, isAdmin }, ... ] }
  *
  * Returns list of all users.
  *
@@ -63,9 +63,9 @@ router.get("/", ensureAdmin, async function (req, res, next) {
 
 /** GET /[username] => { user }
  *
- * Returns { username, firstName, lastName, isAdmin }
+ * Returns { username, firstName, lastName, email, isAdmin, jobsApplied }
  *
- * Authorization required: matching logged in user or admin
+ * Authorization required: matching user (logged in) or admin
  **/
 
 router.get("/:username", ensureSelfOrAdmin, async function (req, res, next) {
@@ -85,7 +85,7 @@ router.get("/:username", ensureSelfOrAdmin, async function (req, res, next) {
  *
  * Returns { username, firstName, lastName, email, isAdmin }
  *
- * Authorization required: matching logged in user or admin
+ * Authorization required: matching user (logged in) or admin
  **/
 
 router.patch("/:username", ensureSelfOrAdmin, async function (req, res, next) {
@@ -106,7 +106,7 @@ router.patch("/:username", ensureSelfOrAdmin, async function (req, res, next) {
 
 /** DELETE /[username]  =>  { deleted: username }
  *
- * Authorization required: matching logged in user or admin
+ * Authorization required: matching user (logged in) or admin
  **/
 
 router.delete("/:username", ensureSelfOrAdmin, async function (req, res, next) {
@@ -117,6 +117,20 @@ router.delete("/:username", ensureSelfOrAdmin, async function (req, res, next) {
     return next(err);
   }
 });
+
+/** POST /[username]/jobs/[id]  =>  { applied: jobId }
+ *
+ * Authorization required: matching user (logged in) or admin
+ **/
+
+router.post("/:username/jobs/:id", ensureSelfOrAdmin, async function (req, res, next) {
+  try {
+    await User.apply(req.params.username, req.params.id);
+    return res.json({ applied: req.params.id });
+  } catch (err) {
+    return next(err);
+  }
+})
 
 
 module.exports = router;

@@ -35,7 +35,7 @@ describe("POST /users", function () {
         email: "new@email.com",
         isAdmin: false,
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(201);
     expect(resp.body).toEqual({
       user: {
@@ -59,7 +59,7 @@ describe("POST /users", function () {
         email: "new@email.com",
         isAdmin: true,
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(201);
     expect(resp.body).toEqual({
       user: {
@@ -107,7 +107,7 @@ describe("POST /users", function () {
       .send({
         username: "u-new",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -122,7 +122,7 @@ describe("POST /users", function () {
         email: "not-an-email",
         isAdmin: true,
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(400);
   });
 });
@@ -133,7 +133,7 @@ describe("GET /users", function () {
   test("works for users", async function () {
     const resp = await request(app)
       .get("/users")
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.body).toEqual({
       users: [
         {
@@ -155,7 +155,7 @@ describe("GET /users", function () {
           firstName: "U3F",
           lastName: "U3L",
           email: "user3@user.com",
-          isAdmin: false,
+          isAdmin: true,
         },
       ],
     });
@@ -189,7 +189,7 @@ describe("GET /users", function () {
 /************************************** GET /users/:username */
 
 describe("GET /users/:username", function () {
-  test("works for users", async function () {
+  test("works for getting information about self", async function () {
     const resp = await request(app)
       .get(`/users/u1`)
       .set("authorization", `Bearer ${u1Token}`);
@@ -200,6 +200,23 @@ describe("GET /users/:username", function () {
         lastName: "U1L",
         email: "user1@user.com",
         isAdmin: false,
+        jobsApplied: [testJobs[1].id, testJobs[0].id]
+      },
+    });
+  });
+
+  test("works for getting information about different user as an admin", async function () {
+    const resp = await request(app)
+      .get(`/users/u1`)
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
+    expect(resp.body).toEqual({
+      user: {
+        username: "u1",
+        firstName: "U1F",
+        lastName: "U1L",
+        email: "user1@user.com",
+        isAdmin: false,
+        jobsApplied: [testJobs[1].id, testJobs[0].id]
       },
     });
   });
@@ -210,10 +227,17 @@ describe("GET /users/:username", function () {
     expect(resp.statusCode).toEqual(401);
   });
 
+  test("unauth for non-admin getting information about another user", async function () {
+    const resp = await request(app)
+      .get(`/users/u2`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
   test("not found if user not found", async function () {
     const resp = await request(app)
       .get(`/users/nope`)
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(404);
   });
 });
@@ -221,13 +245,31 @@ describe("GET /users/:username", function () {
 /************************************** PATCH /users/:username */
 
 describe("PATCH /users/:username", () => {
-  test("works for users", async function () {
+  test("works for updating self", async function () {
     const resp = await request(app)
       .patch(`/users/u1`)
       .send({
         firstName: "New",
       })
       .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.body).toEqual({
+      user: {
+        username: "u1",
+        firstName: "New",
+        lastName: "U1L",
+        email: "user1@user.com",
+        isAdmin: false,
+      },
+    });
+  });
+
+  test("works for an admin updating another user", async function () {
+    const resp = await request(app)
+      .patch(`/users/u1`)
+      .send({
+        firstName: "New",
+      })
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.body).toEqual({
       user: {
         username: "u1",
@@ -248,13 +290,23 @@ describe("PATCH /users/:username", () => {
     expect(resp.statusCode).toEqual(401);
   });
 
+  test("unauth for non-admin trying to update another user", async function () {
+    const resp = await request(app)
+      .patch(`/users/u2`)
+      .send({
+        firstName: "New",
+      })
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
   test("not found if no such user", async function () {
     const resp = await request(app)
       .patch(`/users/nope`)
       .send({
         firstName: "Nope",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(404);
   });
 
@@ -264,7 +316,7 @@ describe("PATCH /users/:username", () => {
       .send({
         firstName: 42,
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -292,10 +344,17 @@ describe("PATCH /users/:username", () => {
 /************************************** DELETE /users/:username */
 
 describe("DELETE /users/:username", function () {
-  test("works for users", async function () {
+  test("works for user to delete self", async function () {
     const resp = await request(app)
       .delete(`/users/u1`)
       .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.body).toEqual({ deleted: "u1" });
+  });
+
+  test("works for admin to delete another user", async function () {
+    const resp = await request(app)
+      .delete(`/users/u1`)
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.body).toEqual({ deleted: "u1" });
   });
 
@@ -305,10 +364,104 @@ describe("DELETE /users/:username", function () {
     expect(resp.statusCode).toEqual(401);
   });
 
+  test("unauth for a non-admin to delete another user", async function () {
+    const resp = await request(app)
+      .delete(`/users/u2`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
   test("not found if user missing", async function () {
     const resp = await request(app)
       .delete(`/users/nope`)
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
     expect(resp.statusCode).toEqual(404);
+  });
+});
+
+/************************************** POST /users/:username/jobs/:id */
+
+describe("POST /users/:username/jobs.:id", function () {
+  // Erroneous username and jobId for error testing
+  const wrongUsername = 'fjisaoj';
+  const wrongJobId = 456186535;
+
+  test("works for user to add own application", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${testJobs[2].id}`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.body).toEqual({ applied: testJobs[2].id.toString() });
+  });
+
+  test("works for admin to add application for another user", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${testJobs[2].id}`)
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
+    expect(resp.body).toEqual({ applied: testJobs[2].id.toString() });
+  });
+
+  test("unauth for anon", async function () {
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${testJobs[2].id}`)
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  test("unauth for a non-admin to add application for another user", async function () {
+    const resp = await request(app)
+      .post(`/users/u2/jobs/${testJobs[2].id}`)
+      .set("authorization", `Bearer ${u1Token}`);
+    expect(resp.statusCode).toEqual(401);
+  });
+
+  // The following tests have ROLLBACK to undo BEGIN in beforeEach so transactions will autocommit.
+  // Autocommit is needed because otherwise the failed insert queries will cause the select
+  // queries in the error handling to fail.
+
+  test("not found if user missing", async function () {
+    await db.query("ROLLBACK");
+    const resp = await request(app)
+      .post(`/users/${wrongUsername}/jobs/${testJobs[2].id}`)
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
+    expect(resp.statusCode).toEqual(404);
+    expect(resp.body).toEqual({
+      error: {
+        status: 404, message: `username (${wrongUsername}) not found`
+      }
+    });
+
+    // refresh tables if somehow changes were made to db
+    await commonBeforeAll();
+  });
+
+  test("not found if job id missing", async function () {
+    await db.query("ROLLBACK");
+    const resp = await request(app)
+      .post(`/users/u1/jobs/${wrongJobId}`)
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
+    expect(resp.statusCode).toEqual(404);
+    expect(resp.body).toEqual({
+      error: {
+        status: 404, message: `job id (${wrongJobId}) not found`
+      }
+    });
+
+    // refresh tables if somehow changes were made to db
+    await commonBeforeAll();
+  });
+
+  test("not found if job id and username missing", async function () {
+    await db.query("ROLLBACK");
+    const resp = await request(app)
+      .post(`/users/${wrongUsername}/jobs/${wrongJobId}`)
+      .set("authorization", `Bearer ${u3TokenAdmin}`);
+    expect(resp.statusCode).toEqual(404);
+    expect(resp.body).toEqual({
+      error: {
+        status: 404, message: `username (${wrongUsername}) and job id (${wrongJobId}) not found`
+      }
+    });
+
+    // refresh tables if somehow changes were made to db
+    await commonBeforeAll();
   });
 });
